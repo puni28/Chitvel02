@@ -1,0 +1,54 @@
+CHITVEL HOUSE MAPPER - Version 1.01
+===================================
+
+Release Date: January 4, 2026
+
+FEATURES INCLUDED:
+==================
+✓ Add House Blocks - Click "Add House" button to place new blocks on the map
+✓ Move Houses - Drag blocks to reposition them on the map
+✓ Edit House Details - Click on a block to open editor and edit:
+  - Label/Name of the house
+  - Width (in pixels)
+  - Height (in pixels)
+✓ Save Changes - Click Save button to persist changes to database
+✓ Delete Houses - Double-click any block to delete immediately
+✓ Delete Key Support - Select block and press Delete key to remove
+✓ Draggable Editor - Move editor panel around by dragging the title bar
+✓ Responsive UI - Editor panel appears centered on screen
+✓ Background Map - Supports map.png or map.jpg as background
+
+ARCHITECTURE:
+==============
+- Backend: Python FastAPI
+- Frontend: Konva.js (HTML5 Canvas)
+- Database: SQLite
+- API Endpoints:
+  * GET /api/objects - List all houses
+  * POST /api/objects - Create new house
+  * PUT /api/objects/{id} - Update house
+  * DELETE /api/objects/{id} - Delete house
+
+HOW TO USE:
+===========
+1. Start the server: python -m uvicorn app.main:app --reload
+2. Open browser: http://127.0.0.1:8000
+3. Add houses with "Add House" button
+4. Single-click to edit properties
+5. Double-click to delete
+6. Drag to move, edit dimensions in the editor panel
+
+KNOWN LIMITATIONS:
+==================
+- Corner resize handles not fully functional (use width/height editor instead)
+- No multi-user support
+- No customer management in this version
+
+FUTURE ENHANCEMENTS:
+====================
+- Working corner resize handles
+- Customer management system
+- Export/Import functionality
+- Undo/Redo support
+- Search and filter houses
+- User authentication
