@@ -1,37 +1,122 @@
 <!doctype html>
 <html>
-  <head>
-    <meta charset="utf-8" />
-    <title>Chitvel Planner</title>
-    <link rel="stylesheet" href="/static/styles.css" />
-    <script src="https://unpkg.com/konva@8/konva.min.js"></script>
-  </head>
-  <body>
-    <div id="toolbar">
-      <button id="add-house">Add House</button>
-      <button id="save-all">Save All</button>
-      <span>Tip: click a shape to edit properties; drag/resize with handles.</span>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ISP Customer Map</title>
+  <link rel="stylesheet" href="/static/leaflet.css" />
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+
+  <div id="navbar">
+    <div id="navbar-left">
+      <span id="app-title">ISP Customer Map</span>
+      <span id="area-label">Chitvel &amp; Surrounding Villages</span>
     </div>
-    <div id="container-wrapper">
-      <div id="container"></div>
-      <aside id="editor" class="hidden">
-        <h3>House Editor</h3>
-        <label>Label
-          <input id="obj-label" type="text" placeholder="House name or number" />
+    <div id="navbar-stats">
+      <span class="stat active-stat">Active: <b id="count-active">0</b></span>
+      <span class="stat inactive-stat">Inactive: <b id="count-inactive">0</b></span>
+      <span class="stat pending-stat">Pending: <b id="count-pending">0</b></span>
+      <span class="stat total-stat">Total: <b id="count-total">0</b></span>
+    </div>
+    <div id="navbar-center">
+      <button class="tab-btn active" data-tab="map">Map</button>
+      <button class="tab-btn" data-tab="customers">Customers</button>
+    </div>
+    <div id="navbar-right">
+      <div id="filter-btns">
+        <button class="filter-btn active" data-filter="all">All</button>
+        <button class="filter-btn" data-filter="active">Active</button>
+        <button class="filter-btn" data-filter="inactive">Inactive</button>
+        <button class="filter-btn" data-filter="pending">Pending</button>
+      </div>
+      <button id="add-customer-btn">+ Add Customer</button>
+    </div>
+  </div>
+
+  <div id="map"></div>
+
+  <!-- Customers List Panel -->
+  <div id="customers-panel" class="hidden">
+    <div id="customers-toolbar">
+      <input id="customer-search" type="text" placeholder="Search by name, phone, address, CAN…" />
+      <span id="customers-count"></span>
+    </div>
+    <div id="customers-table-wrap">
+      <table id="customers-table">
+        <thead>
+          <tr>
+            <th>CAN</th>
+            <th>Name</th>
+            <th>Phone</th>
+            <th>Address</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="customers-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Add mode banner -->
+  <div id="add-mode-banner" class="hidden">
+    Click on the map to place a customer marker &nbsp;|&nbsp; Press ESC to cancel
+  </div>
+
+  <!-- Customer Form Modal -->
+  <div id="modal-overlay" class="hidden">
+    <div id="modal">
+      <div id="modal-header">
+        <h3 id="modal-title">Add Customer</h3>
+        <button id="modal-close" title="Close">&#x2715;</button>
+      </div>
+      <div id="modal-body">
+        <label>
+          Select from Customer List (CAN)
+          <select id="fld-can">
+            <option value="">-- Select existing customer --</option>
+          </select>
         </label>
-        <label>Width (pixels)
-          <input id="obj-width" type="number" min="10" />
-        </label>
-        <label>Height (pixels)
-          <input id="obj-height" type="number" min="10" />
-        </label>
-        <div class="editor-actions">
-          <button id="save-btn">Save</button>
-          <button id="delete-btn">Delete</button>
-          <button id="close-btn">Close</button>
+        <div class="form-row">
+          <label>
+            Name *
+            <input id="fld-name" type="text" placeholder="Customer full name" />
+          </label>
+          <label>
+            Phone
+            <input id="fld-phone" type="text" placeholder="Mobile number" />
+          </label>
         </div>
-      </aside>
+        <label>
+          Address
+          <input id="fld-address" type="text" placeholder="House / Street address" />
+        </label>
+        <div class="form-row">
+          <label>
+            Connection Status *
+            <select id="fld-status">
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+              <option value="pending">Pending</option>
+            </select>
+          </label>
+          <label>
+            Plan / Notes
+            <input id="fld-notes" type="text" placeholder="e.g. 50 Mbps, roof issue" />
+          </label>
+        </div>
+        <div id="coords-display"></div>
+      </div>
+      <div id="modal-footer">
+        <button id="btn-save">Save</button>
+        <button id="btn-delete" class="hidden danger">Delete</button>
+        <button id="btn-cancel">Cancel</button>
+      </div>
     </div>
-    <script src="/static/app_simple.js"></script>
-  </body>
+  </div>
+
+  <script src="/static/leaflet.js"></script>
+  <script src="/static/app.js"></script>
+</body>
 </html>

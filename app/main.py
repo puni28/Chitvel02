@@ -112,11 +112,12 @@ def delete_object(obj_id: int):
 
 @app.get("/api/customers")
 def get_customers():
-    import csv
+    import csv, os
     customers = []
+    csv_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'nxt_customers_list.csv'))
     try:
-        with open('nxt_customers_list.csv', 'r', encoding='utf-8') as f:
-            reader = csv.DictReader(f)
+        with open(csv_path, 'r', encoding='utf-8-sig') as f:
+            reader = csv.DictReader(f, skipinitialspace=True)
             for row in reader:
                 customer = {
                     'id': row.get('CAN', ''),
@@ -127,6 +128,6 @@ def get_customers():
                 }
                 if customer['id']:
                     customers.append(customer)
-    except FileNotFoundError:
-        pass
+    except Exception as e:
+        return {"error": str(e), "csv_path": csv_path}
     return customers
