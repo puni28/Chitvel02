@@ -8,7 +8,12 @@ const STATUS_COLOR = {
   active:   '#28a745',
   inactive: '#e53935',
   pending:  '#ff9800',
+  sd:       '#9c27b0',
 };
+
+function normalizeStatus(s) {
+  return (s || '').toLowerCase().trim();
+}
 
 // ── API helpers ──────────────────────────────────────────────
 const api = {
@@ -57,6 +62,8 @@ legend.onAdd = () => {
     <div><span class="legend-dot" style="background:#28a745"></span>Active</div>
     <div><span class="legend-dot" style="background:#e53935"></span>Inactive</div>
     <div><span class="legend-dot" style="background:#ff9800"></span>Pending</div>
+    <div><span class="legend-dot" style="background:#9c27b0"></span>SD</div>
+    <div><span class="legend-dot" style="background:#9e9e9e"></span>Unknown</div>
   `;
   return div;
 };
@@ -78,7 +85,7 @@ function makeMarker(obj) {
   const lng  = parseFloat(meta.lng);
   if (!lat || !lng) return null;
 
-  const color = STATUS_COLOR[obj.status] || '#9e9e9e';
+  const color = STATUS_COLOR[normalizeStatus(obj.status)] || '#9e9e9e';
   const name  = meta.name    || obj.label || 'Unknown';
   const phone = meta.phone   || '';
   const addr  = meta.address || '';
@@ -124,6 +131,36 @@ function escHtml(str) {
     .replace(/"/g, '&quot;');
 }
 
+// ── Merge map-added customers into the CSV customers list ────
+function mergeMapCustomers() {
+  allObjects.forEach(obj => {
+    if (obj.type !== 'customer') return;
+    const meta = obj.meta || {};
+    const can  = meta.custId || String(obj.id);
+    const existing = customers.find(c => c.id === can);
+    const entry = {
+      id:        can,
+      name:      meta.name     || obj.label || '',
+      phone:     meta.phone    || '',
+      city:      meta.city     || '',
+      address:   meta.address  || '',
+      status:    obj.status    || '',
+      base_pack: meta.basePack || '',
+      validity:  meta.validity || '',
+      expiry:    meta.expiry   || '',
+      stb_type:  meta.stbType  || '',
+      stb:       meta.stb      || '',
+      lco:       meta.lco      || '',
+      notes:     meta.notes    || '',
+    };
+    if (existing) {
+      Object.assign(existing, entry);
+    } else {
+      customers.push(entry);
+    }
+  });
+}
+
 // ── Load & render all objects ────────────────────────────────
 async function loadObjects() {
   allObjects = await api.list();
@@ -136,29 +173,32 @@ async function loadObjects() {
     const m = makeMarker(obj);
     if (!m) return;
     markers[obj.id] = m;
-    if (currentFilter === 'all' || obj.status === currentFilter) {
+    if (currentFilter === 'all' || normalizeStatus(obj.status) === currentFilter) {
       m.addTo(map);
     }
   });
+
+  mergeMapCustomers();
 
   updateStats();
 }
 
 function updateStats() {
-  const active   = allObjects.filter(o => o.status === 'active').length;
-  const inactive = allObjects.filter(o => o.status === 'inactive').length;
-  const pending  = allObjects.filter(o => o.status === 'pending').length;
+  const customerObjs = allObjects.filter(o => o.type === 'customer');
+  const active   = customerObjs.filter(o => normalizeStatus(o.status) === 'active').length;
+  const inactive = customerObjs.filter(o => normalizeStatus(o.status) === 'inactive').length;
+  const pending  = customerObjs.filter(o => normalizeStatus(o.status) === 'pending').length;
   document.getElementById('count-active').textContent   = active;
   document.getElementById('count-inactive').textContent = inactive;
   document.getElementById('count-pending').textContent  = pending;
-  document.getElementById('count-total').textContent    = allObjects.length;
+  document.getElementById('count-total').textContent    = customerObjs.length;
 }
 
 function applyFilter() {
   allObjects.forEach(obj => {
     const m = markers[obj.id];
     if (!m) return;
-    if (currentFilter === 'all' || obj.status === currentFilter) {
+    if (currentFilter === 'all' || normalizeStatus(obj.status) === currentFilter) {
       m.addTo(map);
     } else {
       m.remove();
@@ -403,29 +443,58 @@ function renderCustomerTable(list) {
   tbody.innerHTML = '';
   count.textContent = `${list.length} customer${list.length !== 1 ? 's' : ''}`;
   list.forEach(c => {
-    const s = (c.status || '').toLowerCase();
-    const badge = ['active','inactive','pending'].includes(s) ? s : 'unknown';
+    const s = normalizeStatus(c.status);
+    const badge = ['active','inactive','pending','sd'].includes(s) ? s : 'unknown';
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td>${escHtml(c.id)}</td>
       <td>${escHtml(c.name)}</td>
       <td>${escHtml(c.phone)}</td>
+      <td>${escHtml(c.city || '')}</td>
       <td>${escHtml(c.address)}</td>
+      <td>${escHtml(c.base_pack || '')}</td>
+      <td>${escHtml(c.expiry || '')}</td>
       <td><span class="status-badge ${badge}">${escHtml(c.status || '—')}</span></td>
       <td class="actions-cell">
         <button class="row-btn view-btn">View</button>
         <button class="row-btn edit-btn">Edit</button>
+        <button class="row-btn delete-btn">Delete</button>
       </td>
     `;
     tr.querySelector('.view-btn').addEventListener('click', () => openCustomerView(c));
     tr.querySelector('.edit-btn').addEventListener('click', () => openCustomerEdit(c));
+    tr.querySelector('.delete-btn').addEventListener('click', () => deleteCustomerFromList(c, tr));
     tbody.appendChild(tr);
   });
 }
 
+async function deleteCustomerFromList(c, tr) {
+  if (!confirm(`Delete customer "${c.name}" (${c.id})?`)) return;
+
+  // If this customer exists as a map marker, delete it from DB too
+  const mapObj = allObjects.find(o =>
+    o.type === 'customer' &&
+    ((o.meta && o.meta.custId === c.id) || String(o.id) === c.id)
+  );
+  if (mapObj) {
+    await api.delete(mapObj.id);
+    await loadObjects();
+  }
+
+  // Remove from customers array and table row
+  const idx = customers.findIndex(x => x.id === c.id);
+  if (idx !== -1) customers.splice(idx, 1);
+  tr.remove();
+
+  // Update count
+  const count = document.getElementById('customers-count');
+  const remaining = document.querySelectorAll('#customers-tbody tr').length;
+  count.textContent = `${remaining} customer${remaining !== 1 ? 's' : ''}`;
+}
+
 function openCustomerView(c) {
-  const s = (c.status || '').toLowerCase();
-  const badge = ['active','inactive','pending'].includes(s) ? s : 'unknown';
+  const s = normalizeStatus(c.status);
+  const badge = ['active','inactive','pending','sd'].includes(s) ? s : 'unknown';
   document.getElementById('cust-detail-title').textContent = c.name || 'Customer Details';
   document.getElementById('cust-detail-body').innerHTML = `
     <div class="detail-field"><span class="detail-label">CAN</span><span class="detail-value">${escHtml(c.id)}</span></div>
@@ -519,16 +588,24 @@ document.getElementById('edit-save-btn').addEventListener('click', async () => {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   });
+
+  // Update the in-memory customers array so the table reflects changes
+  const c = customers.find(x => x.id === can);
+  if (c) Object.assign(c, payload);
+
   closeCustomerEdit();
+  renderCustomerTable(customers);
 });
 
 document.getElementById('customer-search').addEventListener('input', function() {
   const q = this.value.toLowerCase();
   const filtered = customers.filter(c =>
-    (c.name    || '').toLowerCase().includes(q) ||
-    (c.phone   || '').toLowerCase().includes(q) ||
-    (c.address || '').toLowerCase().includes(q) ||
-    (c.id      || '').toLowerCase().includes(q)
+    (c.name      || '').toLowerCase().includes(q) ||
+    (c.phone     || '').toLowerCase().includes(q) ||
+    (c.address   || '').toLowerCase().includes(q) ||
+    (c.city      || '').toLowerCase().includes(q) ||
+    (c.base_pack || '').toLowerCase().includes(q) ||
+    (c.id        || '').toLowerCase().includes(q)
   );
   renderCustomerTable(filtered);
 });
@@ -556,6 +633,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
       navbarRight.classList.add('hidden');
       addBanner.classList.add('hidden');
       if (addMode) cancelAddMode();
+      mergeMapCustomers();
       renderCustomerTable(customers);
       document.getElementById('customer-search').value = '';
     }
