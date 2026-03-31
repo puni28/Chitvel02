@@ -3,7 +3,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
-from sqlalchemy import create_engine, Column, Integer, String, Text
+from sqlalchemy import create_engine, Column, Integer, String, Text, text
 from sqlalchemy.orm import sessionmaker, declarative_base
 import json
 
@@ -24,7 +24,47 @@ class Obj(Base):
     status = Column(String, default="")
     meta = Column(Text, default="{}")
 
+class CustomerEdit(Base):
+    __tablename__ = "customer_edits"
+    can      = Column(String, primary_key=True)
+    name     = Column(String, default="")
+    phone    = Column(String, default="")
+    city     = Column(String, default="")
+    address  = Column(String, default="")
+    status   = Column(String, default="")
+    base_pack= Column(String, default="")
+    validity = Column(String, default="")
+    expiry   = Column(String, default="")
+    stb      = Column(String, default="")
+    stb_type = Column(String, default="")
+    lco      = Column(String, default="")
+    notes    = Column(String, default="")
+
 Base.metadata.create_all(bind=engine)
+
+# Migrate: add new columns to customer_edits if they don't exist yet
+_new_cols = ['city', 'base_pack', 'validity', 'expiry', 'stb', 'stb_type', 'lco']
+with engine.connect() as _conn:
+    for _col in _new_cols:
+        try:
+            _conn.execute(text(f"ALTER TABLE customer_edits ADD COLUMN {_col} TEXT DEFAULT ''"))
+            _conn.commit()
+        except Exception:
+            pass
+
+class CustomerEditIn(BaseModel):
+    name:     str = ""
+    phone:    str = ""
+    city:     str = ""
+    address:  str = ""
+    status:   str = ""
+    base_pack:str = ""
+    validity: str = ""
+    expiry:   str = ""
+    stb:      str = ""
+    stb_type: str = ""
+    lco:      str = ""
+    notes:    str = ""
 
 class ObjIn(BaseModel):
     type: str
@@ -120,14 +160,59 @@ def get_customers():
             reader = csv.DictReader(f, skipinitialspace=True)
             for row in reader:
                 customer = {
-                    'id': row.get('CAN', ''),
-                    'name': f"{row.get('First Name', '').strip()} {row.get('Last Name', '').strip()}",
-                    'phone': row.get('Mobile No', '').strip(),
-                    'address': row.get('Address1', '').strip(),
-                    'status': row.get('Status', '').strip()
+                    'id':        row.get('CAN', '').strip(),
+                    'name':      f"{row.get('First Name', '').strip()} {row.get('Last Name', '').strip()}",
+                    'phone':     row.get('Mobile No', '').strip(),
+                    'address':   f"{row.get('Address1', '').strip()} {row.get('Address2', '').strip()}".strip(),
+                    'city':      row.get('City', '').strip(),
+                    'status':    row.get('Status', '').strip(),
+                    'stb':       row.get('STB', '').strip(),
+                    'stb_type':  row.get('STB Type', '').strip(),
+                    'base_pack': row.get('Base Pack', '').strip(),
+                    'validity':  row.get('Validity', '').strip(),
+                    'expiry':    row.get('Expiry Date', '').strip(),
+                    'lco':       row.get('Lco Name', '').strip(),
                 }
                 if customer['id']:
                     customers.append(customer)
     except Exception as e:
         return {"error": str(e), "csv_path": csv_path}
     return customers
+
+@app.put("/api/customer-edits/{can}")
+def save_customer_edit(can: str, edit: CustomerEditIn):
+    db = SessionLocal()
+    existing = db.query(CustomerEdit).filter(CustomerEdit.can == can).first()
+    if existing:
+        existing.name      = edit.name
+        existing.phone     = edit.phone
+        existing.city      = edit.city
+        existing.address   = edit.address
+        existing.status    = edit.status
+        existing.base_pack = edit.base_pack
+        existing.validity  = edit.validity
+        existing.expiry    = edit.expiry
+        existing.stb       = edit.stb
+        existing.stb_type  = edit.stb_type
+        existing.lco       = edit.lco
+        existing.notes     = edit.notes
+    else:
+        db.add(CustomerEdit(can=can, name=edit.name, phone=edit.phone, city=edit.city,
+            address=edit.address, status=edit.status, base_pack=edit.base_pack,
+            validity=edit.validity, expiry=edit.expiry, stb=edit.stb,
+            stb_type=edit.stb_type, lco=edit.lco, notes=edit.notes))
+    db.commit()
+    db.close()
+    return {"ok": True}
+
+@app.get("/api/customer-edits/{can}")
+def get_customer_edit(can: str):
+    db = SessionLocal()
+    edit = db.query(CustomerEdit).filter(CustomerEdit.can == can).first()
+    db.close()
+    if not edit:
+        return {}
+    return {"name": edit.name, "phone": edit.phone, "city": edit.city,
+            "address": edit.address, "status": edit.status, "base_pack": edit.base_pack,
+            "validity": edit.validity, "expiry": edit.expiry, "stb": edit.stb,
+            "stb_type": edit.stb_type, "lco": edit.lco, "notes": edit.notes}

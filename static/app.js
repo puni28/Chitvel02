@@ -227,12 +227,19 @@ function closeModal() {
 }
 
 function clearForm() {
-  document.getElementById('fld-can').value     = '';
-  document.getElementById('fld-name').value    = '';
-  document.getElementById('fld-phone').value   = '';
-  document.getElementById('fld-address').value = '';
-  document.getElementById('fld-status').value  = 'active';
-  document.getElementById('fld-notes').value   = '';
+  document.getElementById('fld-can').value      = '';
+  document.getElementById('fld-name').value     = '';
+  document.getElementById('fld-phone').value    = '';
+  document.getElementById('fld-city').value     = '';
+  document.getElementById('fld-address').value  = '';
+  document.getElementById('fld-status').value   = 'ACTIVE';
+  document.getElementById('fld-base-pack').value= '';
+  document.getElementById('fld-validity').value = '';
+  document.getElementById('fld-expiry').value   = '';
+  document.getElementById('fld-stb-type').value = '';
+  document.getElementById('fld-stb').value      = '';
+  document.getElementById('fld-lco').value      = '';
+  document.getElementById('fld-notes').value    = '';
   document.getElementById('coords-display').textContent = '';
 }
 
@@ -247,11 +254,20 @@ document.getElementById('fld-can').addEventListener('change', () => {
   const id   = document.getElementById('fld-can').value;
   const cust = customers.find(c => c.id === id);
   if (!cust) return;
-  document.getElementById('fld-name').value    = cust.name    || '';
-  document.getElementById('fld-phone').value   = cust.phone   || '';
-  document.getElementById('fld-address').value = cust.address || '';
-  const s = (cust.status || '').toLowerCase();
-  document.getElementById('fld-status').value  = s === 'active' ? 'active' : s === 'pending' ? 'pending' : 'inactive';
+  document.getElementById('fld-name').value     = cust.name     || '';
+  document.getElementById('fld-phone').value    = cust.phone    || '';
+  document.getElementById('fld-city').value     = cust.city     || '';
+  document.getElementById('fld-address').value  = cust.address  || '';
+  document.getElementById('fld-base-pack').value= cust.base_pack|| '';
+  document.getElementById('fld-validity').value = cust.validity  || '';
+  document.getElementById('fld-expiry').value   = cust.expiry   || '';
+  document.getElementById('fld-stb-type').value = cust.stb_type || '';
+  document.getElementById('fld-stb').value      = cust.stb      || '';
+  document.getElementById('fld-lco').value      = cust.lco      || '';
+  const s = (cust.status || '').toUpperCase();
+  const sel = document.getElementById('fld-status');
+  sel.value = s;
+  if (!sel.value) sel.selectedIndex = 0;
 });
 
 // ── Save ─────────────────────────────────────────────────────
@@ -272,11 +288,18 @@ document.getElementById('btn-save').addEventListener('click', async () => {
   }
 
   const meta = {
-    custId:  document.getElementById('fld-can').value,
+    custId:   document.getElementById('fld-can').value,
     name,
-    phone:   document.getElementById('fld-phone').value.trim(),
-    address: document.getElementById('fld-address').value.trim(),
-    notes:   document.getElementById('fld-notes').value.trim(),
+    phone:    document.getElementById('fld-phone').value.trim(),
+    city:     document.getElementById('fld-city').value.trim(),
+    address:  document.getElementById('fld-address').value.trim(),
+    basePack: document.getElementById('fld-base-pack').value.trim(),
+    validity: document.getElementById('fld-validity').value.trim(),
+    expiry:   document.getElementById('fld-expiry').value.trim(),
+    stbType:  document.getElementById('fld-stb-type').value.trim(),
+    stb:      document.getElementById('fld-stb').value.trim(),
+    lco:      document.getElementById('fld-lco').value.trim(),
+    notes:    document.getElementById('fld-notes').value.trim(),
     lat,
     lng,
   };
@@ -314,12 +337,21 @@ window.editMarker = function(id) {
   if (!obj) return;
   const meta = obj.meta || {};
   editingId = id;
-  document.getElementById('fld-can').value     = meta.custId  || '';
-  document.getElementById('fld-name').value    = meta.name    || obj.label || '';
-  document.getElementById('fld-phone').value   = meta.phone   || '';
-  document.getElementById('fld-address').value = meta.address || '';
-  document.getElementById('fld-status').value  = obj.status   || 'active';
-  document.getElementById('fld-notes').value   = meta.notes   || '';
+  document.getElementById('fld-can').value      = meta.custId  || '';
+  document.getElementById('fld-name').value     = meta.name    || obj.label || '';
+  document.getElementById('fld-phone').value    = meta.phone   || '';
+  document.getElementById('fld-city').value     = meta.city    || '';
+  document.getElementById('fld-address').value  = meta.address || '';
+  const sel = document.getElementById('fld-status');
+  sel.value = obj.status || 'ACTIVE';
+  if (!sel.value) sel.selectedIndex = 0;
+  document.getElementById('fld-base-pack').value= meta.basePack|| '';
+  document.getElementById('fld-validity').value = meta.validity || '';
+  document.getElementById('fld-expiry').value   = meta.expiry  || '';
+  document.getElementById('fld-stb-type').value = meta.stbType || '';
+  document.getElementById('fld-stb').value      = meta.stb     || '';
+  document.getElementById('fld-lco').value      = meta.lco     || '';
+  document.getElementById('fld-notes').value    = meta.notes   || '';
   document.getElementById('coords-display').textContent =
     meta.lat ? `Location: ${parseFloat(meta.lat).toFixed(6)}, ${parseFloat(meta.lng).toFixed(6)}` : '';
   map.closePopup();
@@ -336,8 +368,15 @@ window.deleteMarker = async function(id) {
 // ── ESC key ──────────────────────────────────────────────────
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
-    if (addMode) cancelAddMode();
-    else closeModal();
+    if (!document.getElementById('cust-edit-overlay').classList.contains('hidden')) {
+      closeCustomerEdit();
+    } else if (!document.getElementById('cust-detail-overlay').classList.contains('hidden')) {
+      document.getElementById('cust-detail-overlay').classList.add('hidden');
+    } else if (addMode) {
+      cancelAddMode();
+    } else {
+      closeModal();
+    }
   }
 });
 
@@ -373,10 +412,115 @@ function renderCustomerTable(list) {
       <td>${escHtml(c.phone)}</td>
       <td>${escHtml(c.address)}</td>
       <td><span class="status-badge ${badge}">${escHtml(c.status || '—')}</span></td>
+      <td class="actions-cell">
+        <button class="row-btn view-btn">View</button>
+        <button class="row-btn edit-btn">Edit</button>
+      </td>
     `;
+    tr.querySelector('.view-btn').addEventListener('click', () => openCustomerView(c));
+    tr.querySelector('.edit-btn').addEventListener('click', () => openCustomerEdit(c));
     tbody.appendChild(tr);
   });
 }
+
+function openCustomerView(c) {
+  const s = (c.status || '').toLowerCase();
+  const badge = ['active','inactive','pending'].includes(s) ? s : 'unknown';
+  document.getElementById('cust-detail-title').textContent = c.name || 'Customer Details';
+  document.getElementById('cust-detail-body').innerHTML = `
+    <div class="detail-field"><span class="detail-label">CAN</span><span class="detail-value">${escHtml(c.id)}</span></div>
+    <div class="detail-field"><span class="detail-label">Status</span><span class="detail-value"><span class="status-badge ${badge}">${escHtml(c.status || '—')}</span></span></div>
+    <div class="detail-field"><span class="detail-label">Name</span><span class="detail-value">${escHtml(c.name)}</span></div>
+    <div class="detail-field"><span class="detail-label">Phone</span><span class="detail-value">${escHtml(c.phone)}</span></div>
+    <div class="detail-field"><span class="detail-label">City</span><span class="detail-value">${escHtml(c.city)}</span></div>
+    <div class="detail-field full-width"><span class="detail-label">Address</span><span class="detail-value">${escHtml(c.address)}</span></div>
+    <div class="detail-field"><span class="detail-label">Base Pack</span><span class="detail-value">${escHtml(c.base_pack)}</span></div>
+    <div class="detail-field"><span class="detail-label">Validity</span><span class="detail-value">${escHtml(c.validity)}</span></div>
+    <div class="detail-field"><span class="detail-label">Expiry Date</span><span class="detail-value">${escHtml(c.expiry)}</span></div>
+    <div class="detail-field"><span class="detail-label">STB Type</span><span class="detail-value">${escHtml(c.stb_type)}</span></div>
+    <div class="detail-field full-width"><span class="detail-label">STB Serial</span><span class="detail-value">${escHtml(c.stb)}</span></div>
+    <div class="detail-field full-width"><span class="detail-label">LCO</span><span class="detail-value">${escHtml(c.lco)}</span></div>
+    <div class="detail-field full-width"><span class="detail-label">Notes</span><span class="detail-value">${escHtml(c.notes || '')}</span></div>
+  `;
+  document.getElementById('cust-detail-overlay').classList.remove('hidden');
+}
+
+document.getElementById('cust-detail-close').addEventListener('click', () => {
+  document.getElementById('cust-detail-overlay').classList.add('hidden');
+});
+document.getElementById('cust-detail-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('cust-detail-overlay'))
+    document.getElementById('cust-detail-overlay').classList.add('hidden');
+});
+
+// ── Customer Edit Modal ──────────────────────────────────────
+function openCustomerEdit(c) {
+  document.getElementById('edit-can').value      = c.id;
+  document.getElementById('edit-name').value     = c.name     || '';
+  document.getElementById('edit-phone').value    = c.phone    || '';
+  document.getElementById('edit-city').value     = c.city     || '';
+  document.getElementById('edit-address').value  = c.address  || '';
+  document.getElementById('edit-base-pack').value= c.base_pack|| '';
+  document.getElementById('edit-validity').value = c.validity  || '';
+  document.getElementById('edit-expiry').value   = c.expiry   || '';
+  document.getElementById('edit-stb-type').value = c.stb_type || '';
+  document.getElementById('edit-stb').value      = c.stb      || '';
+  document.getElementById('edit-lco').value      = c.lco      || '';
+  document.getElementById('edit-notes').value    = '';
+  const sel = document.getElementById('edit-status');
+  sel.value = (c.status || '').toUpperCase();
+  if (!sel.value) sel.selectedIndex = 0;
+  // Load any previously saved edits
+  fetch(`/api/customer-edits/${encodeURIComponent(c.id)}`).then(r => r.json()).then(edit => {
+    if (edit.name)     document.getElementById('edit-name').value     = edit.name;
+    if (edit.phone)    document.getElementById('edit-phone').value    = edit.phone;
+    if (edit.city)     document.getElementById('edit-city').value     = edit.city;
+    if (edit.address)  document.getElementById('edit-address').value  = edit.address;
+    if (edit.base_pack)document.getElementById('edit-base-pack').value= edit.base_pack;
+    if (edit.validity) document.getElementById('edit-validity').value = edit.validity;
+    if (edit.expiry)   document.getElementById('edit-expiry').value   = edit.expiry;
+    if (edit.stb_type) document.getElementById('edit-stb-type').value = edit.stb_type;
+    if (edit.stb)      document.getElementById('edit-stb').value      = edit.stb;
+    if (edit.lco)      document.getElementById('edit-lco').value      = edit.lco;
+    if (edit.notes)    document.getElementById('edit-notes').value    = edit.notes;
+    if (edit.status)   { sel.value = edit.status; if (!sel.value) sel.selectedIndex = 0; }
+  }).catch(() => {});
+  document.getElementById('cust-edit-overlay').classList.remove('hidden');
+}
+
+function closeCustomerEdit() {
+  document.getElementById('cust-edit-overlay').classList.add('hidden');
+}
+
+document.getElementById('cust-edit-close').addEventListener('click', closeCustomerEdit);
+document.getElementById('edit-cancel-btn').addEventListener('click', closeCustomerEdit);
+document.getElementById('cust-edit-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('cust-edit-overlay')) closeCustomerEdit();
+});
+
+document.getElementById('edit-save-btn').addEventListener('click', async () => {
+  const can = document.getElementById('edit-can').value;
+  const payload = {
+    name:     document.getElementById('edit-name').value.trim(),
+    phone:    document.getElementById('edit-phone').value.trim(),
+    city:     document.getElementById('edit-city').value.trim(),
+    address:  document.getElementById('edit-address').value.trim(),
+    status:   document.getElementById('edit-status').value,
+    base_pack:document.getElementById('edit-base-pack').value.trim(),
+    validity: document.getElementById('edit-validity').value.trim(),
+    expiry:   document.getElementById('edit-expiry').value.trim(),
+    stb_type: document.getElementById('edit-stb-type').value.trim(),
+    stb:      document.getElementById('edit-stb').value.trim(),
+    lco:      document.getElementById('edit-lco').value.trim(),
+    notes:    document.getElementById('edit-notes').value.trim(),
+  };
+  await fetch(`/api/customer-edits/${encodeURIComponent(can)}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  closeCustomerEdit();
+});
 
 document.getElementById('customer-search').addEventListener('input', function() {
   const q = this.value.toLowerCase();

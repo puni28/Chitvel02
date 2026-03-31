@@ -1,0 +1,39 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C /c/Projects/Chitvel02 log --oneline -10)",
+      "Bash(git -C /c/Projects/Chitvel02 diff --stat HEAD)",
+      "Bash(python:*)",
+      "Read(//c/Users/saipu/AppData/Local/Programs/Python//**)",
+      "Bash(ls /c/Python*)",
+      "Read(//c/Users/saipu/AppData/Local/Microsoft/WindowsApps/**)",
+      "Bash(pip3 --version)",
+      "Bash(\"/c/Users/saipu/AppData/Local/Programs/Python/Python314/python.exe\" --version)",
+      "Bash(curl -s http://127.0.0.1:8000/api/customers)",
+      "Bash(\"/c/Users/saipu/AppData/Local/Programs/Python/Python314/python.exe\" -c \"\nimport csv\nwith open\\('C:/Projects/Chitvel02/nxt_customers_list.csv', 'r', encoding='utf-8-sig'\\) as f:\n    reader = csv.DictReader\\(f, skipinitialspace=True\\)\n    rows = list\\(reader\\)\n    print\\('Keys:', list\\(rows[0].keys\\(\\)\\)[:8] if rows else 'no rows'\\)\n    print\\('First row CAN:', rows[0].get\\('CAN', 'NOT FOUND'\\) if rows else 'N/A'\\)\n    print\\('Total rows:', len\\(rows\\)\\)\n\")",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(f''''count: {len\\(d\\)}''''\\)\")",
+      "Bash(\"/c/Users/saipu/AppData/Local/Programs/Python/Python314/python.exe\" -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(f''''count: {len\\(d\\)}, first: {d[0] if d else None}''''\\)\")",
+      "Bash(\"/c/Users/saipu/AppData/Local/Programs/Python/Python314/python.exe\" -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(f''''count: {len\\(d\\)}, sample: {d[:2]}''''\\)\")",
+      "Bash(taskkill /F /IM python.exe)",
+      "Bash(\"/c/Users/saipu/AppData/Local/Programs/Python/Python314/python.exe\" -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(d if isinstance\\(d,dict\\) else f''''count={len\\(d\\)}, first={d[0] if d else None}''''\\)\")",
+      "Bash(curl -s http://127.0.0.1:8000/api/debug-csv)",
+      "Bash(curl -sL \"https://unpkg.com/leaflet@1.9.4/dist/images/layers.png\" -o \"c:/Projects/Chitvel02/static/layers.png\")",
+      "Bash(curl -sL \"https://unpkg.com/leaflet@1.9.4/dist/images/layers-2x.png\" -o \"c:/Projects/Chitvel02/static/layers-2x.png\")",
+      "Bash(ls -la \"c:/Projects/Chitvel02/static/layers\"*.png)",
+      "Bash(\"/c/Users/saipu/AppData/Local/Programs/Python/Python314/python.exe\" -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(f''''count={len\\(d\\)}''''\\)\")",
+      "Bash(netstat -ano)",
+      "Bash(taskkill /F /PID 10176 /PID 8900 /PID 7264 /PID 7720)",
+      "Bash(taskkill /F /PID 7720 /PID 7264 /PID 8900)",
+      "Bash(taskkill /F /IM python3.14.exe)",
+      "Bash(wmic process:*)",
+      "Bash(kill -9 1821 1874 1935 1908)",
+      "Bash(xargs kill:*)",
+      "Bash(powershell.exe -Command \"Stop-Process -Id 8900,10176,7720,7264 -Force -ErrorAction SilentlyContinue; Start-Sleep 1; Get-NetTCPConnection -LocalPort 8000 -ErrorAction SilentlyContinue | Select LocalPort,OwningProcess\")",
+      "Bash(powershell.exe -Command \"Stop-Process -Id 7720 -Force -ErrorAction SilentlyContinue; Start-Sleep 1; Get-NetTCPConnection -LocalPort 8000 -ErrorAction SilentlyContinue | Select LocalPort,OwningProcess\")",
+      "Bash(powershell.exe -Command \"Stop-Process -Id 10176 -Force -ErrorAction SilentlyContinue; Start-Sleep 2; Get-NetTCPConnection -LocalPort 8000 -ErrorAction SilentlyContinue | Select LocalPort,OwningProcess\")",
+      "Bash(powershell.exe -Command \"Get-Process python* | Select Id,Name,CPU | Format-Table\")",
+      "Bash(powershell.exe -Command \"Get-Process python* | Stop-Process -Force; Start-Sleep 2; Get-NetTCPConnection -LocalPort 8000 -ErrorAction SilentlyContinue | Select LocalPort,OwningProcess\")",
+      "Bash(\"/c/Users/saipu/AppData/Local/Programs/Python/Python314/python.exe\" -m uvicorn --version 2>&1)"
+    ]
+  }
+}

@@ -52,6 +52,7 @@
             <th>Phone</th>
             <th>Address</th>
             <th>Status</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody id="customers-tbody"></tbody>
@@ -79,39 +80,93 @@
           </select>
         </label>
         <div class="form-row">
-          <label>
-            Name *
-            <input id="fld-name" type="text" placeholder="Customer full name" />
-          </label>
-          <label>
-            Phone
-            <input id="fld-phone" type="text" placeholder="Mobile number" />
-          </label>
+          <label>Name *<input id="fld-name" type="text" placeholder="Customer full name" /></label>
+          <label>Phone<input id="fld-phone" type="text" placeholder="Mobile number" /></label>
         </div>
-        <label>
-          Address
-          <input id="fld-address" type="text" placeholder="House / Street address" />
-        </label>
         <div class="form-row">
-          <label>
-            Connection Status *
+          <label>City<input id="fld-city" type="text" placeholder="City" /></label>
+          <label>Status *
             <select id="fld-status">
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
+              <option value="ACTIVE">Active</option>
+              <option value="INACTIVE">Inactive</option>
+              <option value="SD">SD</option>
               <option value="pending">Pending</option>
             </select>
           </label>
-          <label>
-            Plan / Notes
-            <input id="fld-notes" type="text" placeholder="e.g. 50 Mbps, roof issue" />
-          </label>
         </div>
+        <label>Address<input id="fld-address" type="text" placeholder="House / Street address" /></label>
+        <div class="form-row">
+          <label>Base Pack<input id="fld-base-pack" type="text" placeholder="e.g. 50 Mbps" /></label>
+          <label>Validity<input id="fld-validity" type="text" placeholder="e.g. 1M" /></label>
+        </div>
+        <div class="form-row">
+          <label>Expiry Date<input id="fld-expiry" type="text" placeholder="DD-MMM-YY" /></label>
+          <label>STB Type<input id="fld-stb-type" type="text" placeholder="e.g. SD" /></label>
+        </div>
+        <label>STB Serial<input id="fld-stb" type="text" placeholder="STB serial number" /></label>
+        <label>LCO<input id="fld-lco" type="text" placeholder="LCO name" /></label>
+        <label>Notes<input id="fld-notes" type="text" placeholder="Internal notes…" /></label>
         <div id="coords-display"></div>
       </div>
       <div id="modal-footer">
         <button id="btn-save">Save</button>
         <button id="btn-delete" class="hidden danger">Delete</button>
         <button id="btn-cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Customer View Modal -->
+  <div id="cust-detail-overlay" class="hidden">
+    <div id="cust-detail-modal">
+      <div id="cust-detail-header">
+        <h3 id="cust-detail-title">Customer Details</h3>
+        <button id="cust-detail-close">&#x2715;</button>
+      </div>
+      <div id="cust-detail-body"></div>
+    </div>
+  </div>
+
+  <!-- Customer Edit Modal -->
+  <div id="cust-edit-overlay" class="hidden">
+    <div id="cust-edit-modal">
+      <div id="cust-edit-header">
+        <h3>Edit Customer</h3>
+        <button id="cust-edit-close">&#x2715;</button>
+      </div>
+      <div id="cust-edit-body">
+        <input type="hidden" id="edit-can" />
+        <div class="form-row">
+          <label>Name<input id="edit-name" type="text" /></label>
+          <label>Phone<input id="edit-phone" type="text" /></label>
+        </div>
+        <div class="form-row">
+          <label>City<input id="edit-city" type="text" /></label>
+          <label>Status
+            <select id="edit-status">
+              <option value="ACTIVE">Active</option>
+              <option value="INACTIVE">Inactive</option>
+              <option value="SD">SD</option>
+              <option value="pending">Pending</option>
+            </select>
+          </label>
+        </div>
+        <label>Address<input id="edit-address" type="text" /></label>
+        <div class="form-row">
+          <label>Base Pack<input id="edit-base-pack" type="text" /></label>
+          <label>Validity<input id="edit-validity" type="text" /></label>
+        </div>
+        <div class="form-row">
+          <label>Expiry Date<input id="edit-expiry" type="text" /></label>
+          <label>STB Type<input id="edit-stb-type" type="text" /></label>
+        </div>
+        <label>STB Serial<input id="edit-stb" type="text" /></label>
+        <label>LCO<input id="edit-lco" type="text" /></label>
+        <label>Notes<input id="edit-notes" type="text" placeholder="Internal notes…" /></label>
+      </div>
+      <div id="cust-edit-footer">
+        <button id="edit-save-btn">Save</button>
+        <button id="edit-cancel-btn">Cancel</button>
       </div>
     </div>
   </div>
