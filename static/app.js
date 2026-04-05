@@ -10,6 +10,20 @@ const STATUS_COLOR = {
   pending:  '#ff9800',
 };
 
+function normalizeStatus(value) {
+  const raw = String(value || '').trim().toLowerCase();
+  if (['active', 'sd', 'hd'].includes(raw)) return 'active';
+  if (['inactive', 'expired', 'temp dc'].includes(raw)) return 'inactive';
+  if (['pending', 'new'].includes(raw)) return 'pending';
+  return raw;
+}
+
+function formatStatusLabel(value) {
+  const normalized = normalizeStatus(value);
+  if (!normalized) return 'Unknown';
+  return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+}
+
 // ── API helpers ──────────────────────────────────────────────
 const api = {
   list:   ()        => fetch('/api/objects').then(r => r.json()),
@@ -78,7 +92,8 @@ function makeMarker(obj) {
   const lng  = parseFloat(meta.lng);
   if (!lat || !lng) return null;
 
-  const color = STATUS_COLOR[obj.status] || '#9e9e9e';
+  const normalizedStatus = normalizeStatus(obj.status);
+  const color = STATUS_COLOR[normalizedStatus] || '#9e9e9e';
   const name  = meta.name    || obj.label || 'Unknown';
   const phone = meta.phone   || '';
   const addr  = meta.address || '';
@@ -94,7 +109,7 @@ function makeMarker(obj) {
     fillOpacity: 0.9,
   });
 
-  marker.bindPopup(buildPopup(obj.id, name, can, phone, addr, notes, obj.status, color));
+  marker.bindPopup(buildPopup(obj.id, name, can, phone, addr, notes, normalizedStatus, color));
   return marker;
 }
 
@@ -136,7 +151,7 @@ async function loadObjects() {
     const m = makeMarker(obj);
     if (!m) return;
     markers[obj.id] = m;
-    if (currentFilter === 'all' || obj.status === currentFilter) {
+    if (currentFilter === 'all' || normalizeStatus(obj.status) === currentFilter) {
       m.addTo(map);
     }
   });
@@ -145,9 +160,9 @@ async function loadObjects() {
 }
 
 function updateStats() {
-  const active   = allObjects.filter(o => o.status === 'active').length;
-  const inactive = allObjects.filter(o => o.status === 'inactive').length;
-  const pending  = allObjects.filter(o => o.status === 'pending').length;
+  const active   = allObjects.filter(o => normalizeStatus(o.status) === 'active').length;
+  const inactive = allObjects.filter(o => normalizeStatus(o.status) === 'inactive').length;
+  const pending  = allObjects.filter(o => normalizeStatus(o.status) === 'pending').length;
   document.getElementById('count-active').textContent   = active;
   document.getElementById('count-inactive').textContent = inactive;
   document.getElementById('count-pending').textContent  = pending;
@@ -158,7 +173,7 @@ function applyFilter() {
   allObjects.forEach(obj => {
     const m = markers[obj.id];
     if (!m) return;
-    if (currentFilter === 'all' || obj.status === currentFilter) {
+    if (currentFilter === 'all' || normalizeStatus(obj.status) === currentFilter) {
       m.addTo(map);
     } else {
       m.remove();
@@ -232,7 +247,7 @@ function clearForm() {
   document.getElementById('fld-phone').value    = '';
   document.getElementById('fld-city').value     = '';
   document.getElementById('fld-address').value  = '';
-  document.getElementById('fld-status').value   = 'ACTIVE';
+  document.getElementById('fld-status').value   = 'active';
   document.getElementById('fld-base-pack').value= '';
   document.getElementById('fld-validity').value = '';
   document.getElementById('fld-expiry').value   = '';
@@ -264,7 +279,7 @@ document.getElementById('fld-can').addEventListener('change', () => {
   document.getElementById('fld-stb-type').value = cust.stb_type || '';
   document.getElementById('fld-stb').value      = cust.stb      || '';
   document.getElementById('fld-lco').value      = cust.lco      || '';
-  const s = (cust.status || '').toUpperCase();
+  const s = normalizeStatus(cust.status);
   const sel = document.getElementById('fld-status');
   sel.value = s;
   if (!sel.value) sel.selectedIndex = 0;
@@ -275,7 +290,7 @@ document.getElementById('btn-save').addEventListener('click', async () => {
   const name = document.getElementById('fld-name').value.trim();
   if (!name) { alert('Please enter a customer name.'); return; }
 
-  const status = document.getElementById('fld-status').value;
+  const status = normalizeStatus(document.getElementById('fld-status').value);
 
   let lat, lng;
   if (editingId) {
@@ -343,7 +358,7 @@ window.editMarker = function(id) {
   document.getElementById('fld-city').value     = meta.city    || '';
   document.getElementById('fld-address').value  = meta.address || '';
   const sel = document.getElementById('fld-status');
-  sel.value = obj.status || 'ACTIVE';
+  sel.value = normalizeStatus(obj.status) || 'active';
   if (!sel.value) sel.selectedIndex = 0;
   document.getElementById('fld-base-pack').value= meta.basePack|| '';
   document.getElementById('fld-validity').value = meta.validity || '';
@@ -385,6 +400,7 @@ async function loadCustomers() {
   try {
     customers = await fetch('/api/customers').then(r => r.json());
     const sel = document.getElementById('fld-can');
+    sel.innerHTML = '<option value="">-- Select existing customer --</option>';
     customers.forEach(c => {
       const opt = document.createElement('option');
       opt.value       = c.id;
@@ -403,7 +419,7 @@ function renderCustomerTable(list) {
   tbody.innerHTML = '';
   count.textContent = `${list.length} customer${list.length !== 1 ? 's' : ''}`;
   list.forEach(c => {
-    const s = (c.status || '').toLowerCase();
+    const s = normalizeStatus(c.status);
     const badge = ['active','inactive','pending'].includes(s) ? s : 'unknown';
     const tr = document.createElement('tr');
     tr.innerHTML = `
@@ -411,7 +427,7 @@ function renderCustomerTable(list) {
       <td>${escHtml(c.name)}</td>
       <td>${escHtml(c.phone)}</td>
       <td>${escHtml(c.address)}</td>
-      <td><span class="status-badge ${badge}">${escHtml(c.status || '—')}</span></td>
+      <td><span class="status-badge ${badge}">${escHtml(formatStatusLabel(c.status))}</span></td>
       <td class="actions-cell">
         <button class="row-btn view-btn">View</button>
         <button class="row-btn edit-btn">Edit</button>
@@ -424,12 +440,12 @@ function renderCustomerTable(list) {
 }
 
 function openCustomerView(c) {
-  const s = (c.status || '').toLowerCase();
+  const s = normalizeStatus(c.status);
   const badge = ['active','inactive','pending'].includes(s) ? s : 'unknown';
   document.getElementById('cust-detail-title').textContent = c.name || 'Customer Details';
   document.getElementById('cust-detail-body').innerHTML = `
     <div class="detail-field"><span class="detail-label">CAN</span><span class="detail-value">${escHtml(c.id)}</span></div>
-    <div class="detail-field"><span class="detail-label">Status</span><span class="detail-value"><span class="status-badge ${badge}">${escHtml(c.status || '—')}</span></span></div>
+    <div class="detail-field"><span class="detail-label">Status</span><span class="detail-value"><span class="status-badge ${badge}">${escHtml(formatStatusLabel(c.status))}</span></span></div>
     <div class="detail-field"><span class="detail-label">Name</span><span class="detail-value">${escHtml(c.name)}</span></div>
     <div class="detail-field"><span class="detail-label">Phone</span><span class="detail-value">${escHtml(c.phone)}</span></div>
     <div class="detail-field"><span class="detail-label">City</span><span class="detail-value">${escHtml(c.city)}</span></div>
@@ -466,9 +482,9 @@ function openCustomerEdit(c) {
   document.getElementById('edit-stb-type').value = c.stb_type || '';
   document.getElementById('edit-stb').value      = c.stb      || '';
   document.getElementById('edit-lco').value      = c.lco      || '';
-  document.getElementById('edit-notes').value    = '';
+  document.getElementById('edit-notes').value    = c.notes || '';
   const sel = document.getElementById('edit-status');
-  sel.value = (c.status || '').toUpperCase();
+  sel.value = normalizeStatus(c.status);
   if (!sel.value) sel.selectedIndex = 0;
   // Load any previously saved edits
   fetch(`/api/customer-edits/${encodeURIComponent(c.id)}`).then(r => r.json()).then(edit => {
@@ -483,7 +499,7 @@ function openCustomerEdit(c) {
     if (edit.stb)      document.getElementById('edit-stb').value      = edit.stb;
     if (edit.lco)      document.getElementById('edit-lco').value      = edit.lco;
     if (edit.notes)    document.getElementById('edit-notes').value    = edit.notes;
-    if (edit.status)   { sel.value = edit.status; if (!sel.value) sel.selectedIndex = 0; }
+    if (edit.status)   { sel.value = normalizeStatus(edit.status); if (!sel.value) sel.selectedIndex = 0; }
   }).catch(() => {});
   document.getElementById('cust-edit-overlay').classList.remove('hidden');
 }
@@ -505,7 +521,7 @@ document.getElementById('edit-save-btn').addEventListener('click', async () => {
     phone:    document.getElementById('edit-phone').value.trim(),
     city:     document.getElementById('edit-city').value.trim(),
     address:  document.getElementById('edit-address').value.trim(),
-    status:   document.getElementById('edit-status').value,
+    status:   normalizeStatus(document.getElementById('edit-status').value),
     base_pack:document.getElementById('edit-base-pack').value.trim(),
     validity: document.getElementById('edit-validity').value.trim(),
     expiry:   document.getElementById('edit-expiry').value.trim(),
@@ -519,6 +535,11 @@ document.getElementById('edit-save-btn').addEventListener('click', async () => {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   });
+  const index = customers.findIndex(c => c.id === can);
+  if (index >= 0) {
+    customers[index] = { ...customers[index], ...payload };
+  }
+  renderCustomerTable(customers);
   closeCustomerEdit();
 });
 
