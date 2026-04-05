@@ -115,18 +115,16 @@ function makeMarker(obj) {
 
 function buildPopup(id, name, can, phone, addr, notes, status, color) {
   return `
-    <div style="min-width:200px;font-family:Arial,sans-serif">
-      <div style="font-weight:bold;font-size:14px;margin-bottom:6px;color:#1a1a2e">${escHtml(name)}</div>
-      ${can   ? `<div style="font-size:12px;color:#666;margin-bottom:2px">CAN: ${escHtml(can)}</div>` : ''}
-      ${phone ? `<div style="font-size:13px;margin-bottom:2px">&#128222; ${escHtml(phone)}</div>` : ''}
-      ${addr  ? `<div style="font-size:12px;color:#555;margin-bottom:2px">&#128205; ${escHtml(addr)}</div>` : ''}
-      ${notes ? `<div style="font-size:12px;color:#888;margin-bottom:4px">${escHtml(notes)}</div>` : ''}
-      <div style="margin:8px 0">
-        <span style="background:${color};color:white;padding:2px 10px;border-radius:10px;font-size:11px;text-transform:capitalize">${status}</span>
-      </div>
-      <div style="display:flex;gap:6px;margin-top:10px">
-        <button onclick="editMarker(${id})"   style="flex:1;padding:6px;background:#007bff;color:white;border:none;border-radius:4px;cursor:pointer;font-size:12px">Edit</button>
-        <button onclick="deleteMarker(${id})" style="flex:1;padding:6px;background:#e53935;color:white;border:none;border-radius:4px;cursor:pointer;font-size:12px">Delete</button>
+    <div class="popup-card">
+      <div class="popup-title">${escHtml(name)}</div>
+      ${can   ? `<div class="popup-meta">CAN: ${escHtml(can)}</div>` : ''}
+      ${phone ? `<div class="popup-meta">Phone: ${escHtml(phone)}</div>` : ''}
+      ${addr  ? `<div class="popup-meta">Address: ${escHtml(addr)}</div>` : ''}
+      ${notes ? `<div class="popup-note">${escHtml(notes)}</div>` : ''}
+      <div class="popup-status" style="background:${color}">${escHtml(formatStatusLabel(status))}</div>
+      <div class="popup-actions">
+        <button onclick="editMarker(${id})" class="popup-btn edit">Edit</button>
+        <button onclick="deleteMarker(${id})" class="popup-btn delete">Delete</button>
       </div>
     </div>`;
 }
@@ -418,16 +416,22 @@ function renderCustomerTable(list) {
   const count = document.getElementById('customers-count');
   tbody.innerHTML = '';
   count.textContent = `${list.length} customer${list.length !== 1 ? 's' : ''}`;
+  if (!list.length) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td colspan="6">No customers matched your search.</td>`;
+    tbody.appendChild(tr);
+    return;
+  }
   list.forEach(c => {
     const s = normalizeStatus(c.status);
     const badge = ['active','inactive','pending'].includes(s) ? s : 'unknown';
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td>${escHtml(c.id)}</td>
-      <td>${escHtml(c.name)}</td>
-      <td>${escHtml(c.phone)}</td>
-      <td>${escHtml(c.address)}</td>
-      <td><span class="status-badge ${badge}">${escHtml(formatStatusLabel(c.status))}</span></td>
+      <td data-label="CAN">${escHtml(c.id)}</td>
+      <td data-label="Name">${escHtml(c.name)}</td>
+      <td data-label="Phone">${escHtml(c.phone)}</td>
+      <td data-label="Address">${escHtml(c.address)}</td>
+      <td data-label="Status"><span class="status-badge ${badge}">${escHtml(formatStatusLabel(c.status))}</span></td>
       <td class="actions-cell">
         <button class="row-btn view-btn">View</button>
         <button class="row-btn edit-btn">Edit</button>

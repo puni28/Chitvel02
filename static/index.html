@@ -10,28 +10,33 @@
 <body>
 
   <div id="navbar">
-    <div id="navbar-left">
-      <span id="app-title">ISP Customer Map</span>
-      <span id="area-label">Chitvel &amp; Surrounding Villages</span>
-    </div>
-    <div id="navbar-stats">
-      <span class="stat active-stat">Active: <b id="count-active">0</b></span>
-      <span class="stat inactive-stat">Inactive: <b id="count-inactive">0</b></span>
-      <span class="stat pending-stat">Pending: <b id="count-pending">0</b></span>
-      <span class="stat total-stat">Total: <b id="count-total">0</b></span>
-    </div>
-    <div id="navbar-center">
-      <button class="tab-btn active" data-tab="map">Map</button>
-      <button class="tab-btn" data-tab="customers">Customers</button>
-    </div>
-    <div id="navbar-right">
-      <div id="filter-btns">
-        <button class="filter-btn active" data-filter="all">All</button>
-        <button class="filter-btn" data-filter="active">Active</button>
-        <button class="filter-btn" data-filter="inactive">Inactive</button>
-        <button class="filter-btn" data-filter="pending">Pending</button>
+    <div id="navbar-top">
+      <div id="navbar-left">
+        <span id="app-kicker">Network Operations</span>
+        <span id="app-title">ISP Customer Map</span>
+        <span id="area-label">Chitvel &amp; Surrounding Villages</span>
       </div>
-      <button id="add-customer-btn">+ Add Customer</button>
+      <div id="navbar-stats">
+        <span class="stat active-stat"><small>Active</small><b id="count-active">0</b></span>
+        <span class="stat inactive-stat"><small>Inactive</small><b id="count-inactive">0</b></span>
+        <span class="stat pending-stat"><small>Pending</small><b id="count-pending">0</b></span>
+        <span class="stat total-stat"><small>Total</small><b id="count-total">0</b></span>
+      </div>
+    </div>
+    <div id="navbar-bottom">
+      <div id="navbar-center">
+        <button class="tab-btn active" data-tab="map">Map</button>
+        <button class="tab-btn" data-tab="customers">Customers</button>
+      </div>
+      <div id="navbar-right">
+        <div id="filter-btns">
+          <button class="filter-btn active" data-filter="all">All</button>
+          <button class="filter-btn" data-filter="active">Active</button>
+          <button class="filter-btn" data-filter="inactive">Inactive</button>
+          <button class="filter-btn" data-filter="pending">Pending</button>
+        </div>
+        <button id="add-customer-btn">+ Add Customer</button>
+      </div>
     </div>
   </div>
 
@@ -62,7 +67,7 @@
 
   <!-- Add mode banner -->
   <div id="add-mode-banner" class="hidden">
-    Click on the map to place a customer marker &nbsp;|&nbsp; Press ESC to cancel
+    Placement mode is active. Click the map to drop a customer marker or press ESC to cancel.
   </div>
 
   <!-- Customer Form Modal -->
